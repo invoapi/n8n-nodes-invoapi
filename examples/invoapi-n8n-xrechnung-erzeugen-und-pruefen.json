@@ -1,0 +1,116 @@
+{
+  "name": "invoapi: XRechnung erzeugen und prüfen",
+  "nodes": [
+    {
+      "id": "46470758-c2ca-4ad8-b02c-33d60e14b795",
+      "name": "Hinweis 821a",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -300
+      ],
+      "parameters": {
+        "content": "## XRechnung erzeugen und prüfen\n\n1. Bei **XRechnung erzeugen** und **E-Rechnung prüfen** Ihre invoapi-Zugangsdaten wählen.\n2. **Execute workflow** klicken.\n\nDie XML-Datei liegt danach im Node *XRechnung erzeugen* unter **Binary**. Im Node *E-Rechnung prüfen* sollte `valid: true` stehen.\n\nIhre echten Rechnungsdaten kommen später statt *Rechnungsdaten* z. B. aus Shop, CRM oder einer Tabelle.",
+        "width": 560,
+        "height": 260
+      }
+    },
+    {
+      "id": "18b8d079-3483-4e32-91ee-7e0d5a3c2ec1",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "67abbbbb-f259-41e8-8319-7a03d739e0b7",
+      "name": "Rechnungsdaten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Beispieldaten. Felder: https://invoapi.de/docs\nreturn [{ json: {\n  \"invoice_number\": \"RE-2026-0001\",\n  \"issue_date\": \"2026-10-28\",\n  \"due_date\": \"2026-11-27\",\n  \"currency\": \"EUR\",\n  \"buyer_reference\": \"04011000-12345-34\",\n  \"seller\": {\n    \"name\": \"Muster GmbH\",\n    \"street\": \"Musterstraße 1\",\n    \"postal_code\": \"10115\",\n    \"city\": \"Berlin\",\n    \"country_code\": \"DE\",\n    \"vat_id\": \"DE123456789\",\n    \"email\": \"rechnung@muster.de\",\n    \"phone\": \"+49 30 1234567\"\n  },\n  \"buyer\": {\n    \"name\": \"Beispiel GmbH\",\n    \"street\": \"Teststraße 10\",\n    \"postal_code\": \"20095\",\n    \"city\": \"Hamburg\",\n    \"country_code\": \"DE\",\n    \"email\": \"kreditoren@beispiel.de\"\n  },\n  \"items\": [\n    {\n      \"name\": \"Beratung\",\n      \"quantity\": 8,\n      \"unit\": \"HUR\",\n      \"unit_price\": 145,\n      \"vat_rate\": 19\n    }\n  ],\n  \"payment\": {\n    \"means_code\": \"58\",\n    \"iban\": \"DE02120300000000202051\"\n  }\n} }];"
+      }
+    },
+    {
+      "id": "212f249b-7c7f-48a4-a137-d5f522284ac1",
+      "name": "XRechnung erzeugen",
+      "type": "n8n-nodes-invoapi.invoapi",
+      "typeVersion": 1,
+      "position": [
+        460,
+        0
+      ],
+      "parameters": {
+        "operation": "generate",
+        "invoiceSource": "item",
+        "format": "xrechnung",
+        "syntax": "ubl",
+        "output": "xml",
+        "validateResult": true,
+        "failOnInvalid": false,
+        "outputBinaryProperty": "data"
+      }
+    },
+    {
+      "id": "46351c8e-8cd8-4fb7-8c2c-1fb1de717e55",
+      "name": "E-Rechnung prüfen",
+      "type": "n8n-nodes-invoapi.invoapi",
+      "typeVersion": 1,
+      "position": [
+        700,
+        0
+      ],
+      "parameters": {
+        "operation": "validate",
+        "inputBinaryProperty": "data",
+        "failOnInvalid": false
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Rechnungsdaten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rechnungsdaten": {
+      "main": [
+        [
+          {
+            "node": "XRechnung erzeugen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XRechnung erzeugen": {
+      "main": [
+        [
+          {
+            "node": "E-Rechnung prüfen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "pinData": {}
+}

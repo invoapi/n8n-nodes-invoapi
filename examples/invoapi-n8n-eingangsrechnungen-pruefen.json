@@ -1,0 +1,156 @@
+{
+  "name": "invoapi: Eingangsrechnungen aus dem Postfach prüfen",
+  "nodes": [
+    {
+      "id": "8c03eaf1-d845-4276-abd4-27a5b461b12a",
+      "name": "Hinweis 7136",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -340
+      ],
+      "parameters": {
+        "content": "## Eingangsrechnungen automatisch prüfen\n\n1. Bei **Neue E-Mail** Ihr Rechnungspostfach verbinden (IMAP-Zugangsdaten).\n2. Bei **E-Rechnung prüfen** Ihre invoapi-Zugangsdaten wählen.\n3. Die beiden Platzhalter rechts durch Ihre Schritte ersetzen, z. B. *Google Drive* zum Ablegen und *Send Email* für die Rückfrage.\n4. Workflow aktivieren.\n\nGeprüft wird der erste Anhang jeder neuen E-Mail (XML oder ZUGFeRD-PDF). Jede Prüfung zählt eine Rechnung.",
+        "width": 600,
+        "height": 300
+      }
+    },
+    {
+      "id": "b3234e5f-c51b-450d-9386-c97d4d0b8192",
+      "name": "Neue E-Mail",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "mailbox": "INBOX",
+        "postProcessAction": "nothing",
+        "downloadAttachments": true,
+        "dataPropertyAttachmentsPrefixName": "attachment_",
+        "options": {}
+      }
+    },
+    {
+      "id": "a97a19fc-ad70-4caf-a13a-8a1cddabe3d6",
+      "name": "E-Rechnung prüfen",
+      "type": "n8n-nodes-invoapi.invoapi",
+      "typeVersion": 1,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "operation": "validate",
+        "inputBinaryProperty": "attachment_0",
+        "failOnInvalid": false
+      }
+    },
+    {
+      "id": "ad7281af-6fe2-4d0c-af7a-3cb585af5d01",
+      "name": "Gültig?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1c15d276-7d16-450a-8ea5-933d94e366a2",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c6713dc5-afdb-4fa3-87df-2db131f63776",
+      "name": "Gültig: ablegen",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        740,
+        -100
+      ],
+      "parameters": {},
+      "notes": "Ersetzen durch: Datei in die Buchhaltung ablegen (Google Drive, Dropbox, DATEV …)",
+      "notesInFlow": true
+    },
+    {
+      "id": "41dc88ed-59ae-4cab-a9d5-af8c641b263c",
+      "name": "Ungültig: Rückfrage",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        740,
+        100
+      ],
+      "parameters": {},
+      "notes": "Ersetzen durch: E-Mail an den Absender mit den Fehlern aus {{ $json.errors }}",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Neue E-Mail": {
+      "main": [
+        [
+          {
+            "node": "E-Rechnung prüfen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E-Rechnung prüfen": {
+      "main": [
+        [
+          {
+            "node": "Gültig?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gültig?": {
+      "main": [
+        [
+          {
+            "node": "Gültig: ablegen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ungültig: Rückfrage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "pinData": {}
+}
