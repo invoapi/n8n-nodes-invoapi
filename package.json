@@ -1,55 +1,60 @@
 {
-  "name": "n8n-nodes-invoapi",
-  "version": "0.1.0",
-  "description": "n8n node for invoapi.de: create, validate, read and convert e-invoices (XRechnung, ZUGFeRD / Factur-X, EN 16931, UBL, CII, Peppol).",
-  "keywords": [
-    "n8n-community-node-package",
-    "e-rechnung",
-    "xrechnung",
-    "zugferd",
-    "factur-x",
-    "en16931",
-    "peppol",
-    "einvoice"
-  ],
-  "license": "MIT",
-  "homepage": "https://invoapi.de/integrationen/n8n",
-  "author": {
-    "name": "Invoapi",
-    "email": "info@invoapi.de"
-  },
-  "main": "index.js",
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "scripts": {
-    "build": "tsc && node -e \"require('fs').copyFileSync('nodes/Invoapi/invoapi.svg','dist/nodes/Invoapi/invoapi.svg')\"",
-    "prepublishOnly": "npm run build"
-  },
-  "n8n": {
-    "n8nNodesApiVersion": 1,
-    "credentials": [
-      "dist/credentials/InvoapiApi.credentials.js"
-    ],
-    "nodes": [
-      "dist/nodes/Invoapi/Invoapi.node.js"
-    ]
-  },
-  "devDependencies": {
-    "@types/node": "^20.17.6",
-    "n8n-workflow": "2.16.0",
-    "typescript": "5.6.3"
-  },
-  "peerDependencies": {
-    "n8n-workflow": "*"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/invoapi/n8n-nodes-invoapi.git"
-  },
-  "bugs": {
-    "url": "https://github.com/invoapi/n8n-nodes-invoapi/issues"
-  }
+	"name": "n8n-nodes-invoapi",
+	"version": "0.2.0",
+	"description": "n8n node for invoapi.de: create, validate, read and convert e-invoices (XRechnung, ZUGFeRD / Factur-X, EN 16931, UBL, CII, Peppol).",
+	"keywords": [
+		"n8n-community-node-package",
+		"e-rechnung",
+		"xrechnung",
+		"zugferd",
+		"factur-x",
+		"en16931",
+		"peppol",
+		"einvoice"
+	],
+	"license": "MIT",
+	"homepage": "https://invoapi.de/integrationen/n8n",
+	"author": {
+		"name": "Invoapi",
+		"email": "info@invoapi.de"
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "n8n-node build",
+		"build:watch": "tsc --watch",
+		"dev": "n8n-node dev",
+		"lint": "n8n-node lint",
+		"lint:fix": "n8n-node lint --fix",
+		"release": "n8n-node release",
+		"prepublishOnly": "n8n-node prerelease"
+	},
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"credentials": [
+			"dist/credentials/InvoapiApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/Invoapi/Invoapi.node.js"
+		],
+		"strict": true
+	},
+	"devDependencies": {
+		"@n8n/node-cli": "*",
+		"eslint": "9.39.4",
+		"prettier": "3.8.3",
+		"release-it": "20.2.0",
+		"typescript": "5.9.3"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/invoapi/n8n-nodes-invoapi.git"
+	},
+	"bugs": {
+		"url": "https://github.com/invoapi/n8n-nodes-invoapi/issues"
+	}
 }

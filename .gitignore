@@ -1,3 +1,5 @@
-node_modules/
-dist/
 *.tgz
+dist
+dist/
+node_modules
+node_modules/

@@ -1,9 +1,9 @@
 {
-  "name": "invoapi: Eingangsrechnungen aus dem Postfach prüfen",
+  "name": "invoapi: Validate Incoming E-Invoices From a Mailbox",
   "nodes": [
     {
       "id": "8c03eaf1-d845-4276-abd4-27a5b461b12a",
-      "name": "Hinweis 7136",
+      "name": "Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
@@ -11,14 +11,14 @@
         -340
       ],
       "parameters": {
-        "content": "## Eingangsrechnungen automatisch prüfen\n\n1. Bei **Neue E-Mail** Ihr Rechnungspostfach verbinden (IMAP-Zugangsdaten).\n2. Bei **E-Rechnung prüfen** Ihre invoapi-Zugangsdaten wählen.\n3. Die beiden Platzhalter rechts durch Ihre Schritte ersetzen, z. B. *Google Drive* zum Ablegen und *Send Email* für die Rückfrage.\n4. Workflow aktivieren.\n\nGeprüft wird der erste Anhang jeder neuen E-Mail (XML oder ZUGFeRD-PDF). Jede Prüfung zählt eine Rechnung.",
+        "content": "## Validate incoming e-invoices\n\n1. In **New Email**, connect your invoice mailbox (IMAP credentials).\n2. In **Validate E-Invoice**, select your invoapi credentials.\n3. Replace the two placeholders on the right with your own steps, e.g. *Google Drive* to file valid invoices and *Send Email* to ask the sender for a corrected invoice, listing `errors`.\n\nEach attachment is checked against the official rules (KoSIT). `valid` is true or false; `errors` lists each rule with an explanation.",
         "width": 600,
         "height": 300
       }
     },
     {
       "id": "b3234e5f-c51b-450d-9386-c97d4d0b8192",
-      "name": "Neue E-Mail",
+      "name": "New Email",
       "type": "n8n-nodes-base.emailReadImap",
       "typeVersion": 2.2,
       "position": [
@@ -35,7 +35,7 @@
     },
     {
       "id": "a97a19fc-ad70-4caf-a13a-8a1cddabe3d6",
-      "name": "E-Rechnung prüfen",
+      "name": "Validate E-Invoice",
       "type": "n8n-nodes-invoapi.invoapi",
       "typeVersion": 1,
       "position": [
@@ -43,6 +43,7 @@
         0
       ],
       "parameters": {
+        "resource": "document",
         "operation": "validate",
         "inputBinaryProperty": "attachment_0",
         "failOnInvalid": false
@@ -50,7 +51,7 @@
     },
     {
       "id": "ad7281af-6fe2-4d0c-af7a-3cb585af5d01",
-      "name": "Gültig?",
+      "name": "Valid?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
@@ -84,7 +85,7 @@
     },
     {
       "id": "c6713dc5-afdb-4fa3-87df-2db131f63776",
-      "name": "Gültig: ablegen",
+      "name": "Valid: File It",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
@@ -97,7 +98,7 @@
     },
     {
       "id": "41dc88ed-59ae-4cab-a9d5-af8c641b263c",
-      "name": "Ungültig: Rückfrage",
+      "name": "Invalid: Ask Sender",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
@@ -110,40 +111,40 @@
     }
   ],
   "connections": {
-    "Neue E-Mail": {
+    "New Email": {
       "main": [
         [
           {
-            "node": "E-Rechnung prüfen",
+            "node": "Validate E-Invoice",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "E-Rechnung prüfen": {
+    "Validate E-Invoice": {
       "main": [
         [
           {
-            "node": "Gültig?",
+            "node": "Valid?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Gültig?": {
+    "Valid?": {
       "main": [
         [
           {
-            "node": "Gültig: ablegen",
+            "node": "Valid: File It",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Ungültig: Rückfrage",
+            "node": "Invalid: Ask Sender",
             "type": "main",
             "index": 0
           }

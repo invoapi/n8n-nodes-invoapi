@@ -19,7 +19,7 @@ const FORMATS = [
 ];
 
 const SYNTAXES = [
-	{ name: 'Standard des Formats', value: '' },
+	{ name: 'Default for the Format', value: '' },
 	{ name: 'UBL', value: 'ubl' },
 	{ name: 'CII', value: 'cii' },
 ];
@@ -31,11 +31,11 @@ export class Invoapi implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'invoapi',
 		name: 'invoapi',
-		icon: 'file:invoapi.svg',
+		icon: { light: 'file:../../icons/invoapi.svg', dark: 'file:../../icons/invoapi.dark.svg' },
 		group: ['transform'],
 		version: 1,
-		subtitle: '={{$parameter["operation"]}}',
-		description: 'E-Rechnungen erzeugen, prüfen, auslesen und umwandeln: XRechnung, ZUGFeRD, EN 16931, UBL, CII, Peppol',
+		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
+		description: 'Generate, validate, parse and convert e-invoices: XRechnung, ZUGFeRD, EN 16931, UBL, CII, Peppol',
 		defaults: { name: 'invoapi' },
 		inputs: ['main' as NodeConnectionType],
 		outputs: ['main' as NodeConnectionType],
@@ -43,66 +43,96 @@ export class Invoapi implements INodeType {
 		credentials: [{ name: 'invoapiApi', required: true }],
 		properties: [
 			{
+				displayName: 'Resource',
+				name: 'resource',
+				type: 'options',
+				noDataExpression: true,
+				default: 'invoice',
+				options: [
+					{
+						name: 'Document',
+						value: 'document',
+						description: 'An existing e-invoice file (XML or ZUGFeRD PDF)',
+					},
+					{
+						name: 'Invoice',
+						value: 'invoice',
+						description: 'Invoice data (JSON) to turn into an e-invoice',
+					},
+				],
+			},
+			{
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
 				noDataExpression: true,
+				displayOptions: { show: { resource: ['invoice'] } },
 				default: 'generate',
 				options: [
 					{
-						name: 'Rechnung erzeugen',
-						value: 'generate',
-						action: 'Rechnung erzeugen',
-						description: 'Aus Rechnungsdaten eine geprüfte E-Rechnung (XML oder ZUGFeRD-PDF) erstellen',
-					},
-					{
-						name: 'E-Rechnung prüfen',
-						value: 'validate',
-						action: 'E-Rechnung prüfen',
-						description: 'Eine XML- oder ZUGFeRD-Datei gegen das offizielle Regelwerk prüfen',
-					},
-					{
-						name: 'Auslesen',
-						value: 'parse',
-						action: 'E-Rechnung auslesen',
-						description: 'Eine E-Rechnung in strukturierte Daten (JSON) umwandeln',
-					},
-					{
-						name: 'Format erkennen',
-						value: 'detect',
-						action: 'Format erkennen',
-						description: 'Welcher Standard, welche Syntax und Version eine Datei ist',
-					},
-					{
-						name: 'Umwandeln',
-						value: 'convert',
-						action: 'E-Rechnung umwandeln',
-						description: 'Eine E-Rechnung in ein anderes Format oder als PDF/HTML ausgeben',
-					},
-					{
-						name: 'Summen berechnen',
+						name: 'Calculate Totals',
 						value: 'calculate',
-						action: 'Summen berechnen',
-						description: 'Netto, Umsatzsteuer und Brutto berechnen (kostenlos)',
+						action: 'Calculate invoice totals',
+						description: 'Compute net, VAT and gross amounts (free of charge)',
+					},
+					{
+						name: 'Generate',
+						value: 'generate',
+						action: 'Generate an e invoice',
+						description: 'Create a validated e-invoice (XML or ZUGFeRD PDF) from invoice data',
+					},
+				],
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: { show: { resource: ['document'] } },
+				default: 'validate',
+				options: [
+					{
+						name: 'Convert',
+						value: 'convert',
+						action: 'Convert an e invoice',
+						description: 'Turn an e-invoice into another format, a PDF or HTML',
+					},
+					{
+						name: 'Detect Format',
+						value: 'detect',
+						action: 'Detect the format of an e invoice',
+						description: 'Identify the standard, syntax and version of a file',
+					},
+					{
+						name: 'Parse',
+						value: 'parse',
+						action: 'Parse an e invoice',
+						description: 'Read an e-invoice into structured data (JSON)',
+					},
+					{
+						name: 'Validate',
+						value: 'validate',
+						action: 'Validate an e invoice',
+						description: 'Check an XML or ZUGFeRD file against the official rule set',
 					},
 				],
 			},
 
 			// ---------------------------------------------------------- invoice input
 			{
-				displayName: 'Rechnungsdaten',
+				displayName: 'Invoice Data',
 				name: 'invoiceSource',
 				type: 'options',
 				default: 'item',
 				displayOptions: { show: { operation: ['generate', 'calculate'] } },
 				options: [
-					{ name: 'JSON des eingehenden Elements', value: 'item' },
-					{ name: 'Feld mit JSON', value: 'field' },
+					{ name: 'JSON of the Incoming Item', value: 'item' },
+					{ name: 'JSON Field', value: 'field' },
 				],
-				description: 'Woher die Rechnungsdaten kommen. Felder: siehe invoapi.de/docs.',
+				description: 'Where the invoice data comes from. Field reference: https://invoapi.de/docs.',
 			},
 			{
-				displayName: 'Rechnung (JSON)',
+				displayName: 'Invoice (JSON)',
 				name: 'invoiceJson',
 				type: 'json',
 				default: '{\n  "invoice_number": "RE-2026-0001",\n  "issue_date": "2026-10-28",\n  "currency": "EUR",\n  "seller": {},\n  "buyer": {},\n  "items": []\n}',
@@ -111,27 +141,27 @@ export class Invoapi implements INodeType {
 
 			// ---------------------------------------------------------- file input
 			{
-				displayName: 'Binärfeld mit der Datei',
+				displayName: 'Input Binary Field',
 				name: 'inputBinaryProperty',
 				type: 'string',
 				default: 'data',
 				required: true,
 				displayOptions: { show: { operation: FILE_INPUT } },
-				description: 'Name des Binärfelds, das die XML- oder PDF-Datei enthält, z. B. aus einem E-Mail-Anhang',
+				description: 'Name of the binary field holding the XML or PDF file, e.g. an e-mail attachment',
 			},
 
 			// ---------------------------------------------------------- generate / convert options
 			{
-				displayName: 'Ziel',
+				displayName: 'Target',
 				name: 'target',
 				type: 'options',
 				default: 'xml',
 				displayOptions: { show: { operation: ['convert'] } },
 				options: [
-					{ name: 'XML (E-Rechnung)', value: 'xml' },
+					{ name: 'XML (E-Invoice)', value: 'xml' },
 					{ name: 'PDF', value: 'pdf' },
-					{ name: 'HTML (Lesefassung)', value: 'html' },
-					{ name: 'JSON (Rechnungsdaten)', value: 'json' },
+					{ name: 'HTML (Readable)', value: 'html' },
+					{ name: 'JSON (Invoice Data)', value: 'json' },
 				],
 			},
 			{
@@ -151,18 +181,18 @@ export class Invoapi implements INodeType {
 				displayOptions: { show: { operation: ['generate', 'convert'], format: ['xrechnung', 'en16931'] }, hide: { target: ['json', 'html'] } },
 			},
 			{
-				displayName: 'Ausgabe',
+				displayName: 'Output',
 				name: 'output',
 				type: 'options',
 				default: 'xml',
 				displayOptions: { show: { operation: ['generate'] } },
 				options: [
 					{ name: 'XML', value: 'xml' },
-					{ name: 'PDF (ZUGFeRD, PDF/A-3 mit eingebettetem XML)', value: 'pdf' },
+					{ name: 'PDF (ZUGFeRD, PDF/A-3 with Embedded XML)', value: 'pdf' },
 				],
 			},
 			{
-				displayName: 'ZUGFeRD-Profil',
+				displayName: 'ZUGFeRD Profile',
 				name: 'profile',
 				type: 'options',
 				default: 'en16931',
@@ -175,14 +205,14 @@ export class Invoapi implements INodeType {
 				],
 			},
 			{
-				displayName: 'Mit offiziellem Validator prüfen',
+				displayName: 'Validate with Official Validator',
 				name: 'validateResult',
 				type: 'boolean',
 				default: true,
 				displayOptions: { show: { operation: ['generate'] } },
 			},
 			{
-				displayName: 'Bei ungültiger Rechnung abbrechen',
+				displayName: 'Stop on Invalid Invoice',
 				name: 'failOnInvalid',
 				type: 'boolean',
 				default: false,
@@ -190,7 +220,7 @@ export class Invoapi implements INodeType {
 				description: 'Whether to stop the workflow with an error when the document is not valid, instead of passing the report on',
 			},
 			{
-				displayName: 'Binärfeld für das Ergebnis',
+				displayName: 'Output Binary Field',
 				name: 'outputBinaryProperty',
 				type: 'string',
 				default: 'data',
@@ -213,18 +243,18 @@ export class Invoapi implements INodeType {
 				json: true,
 				returnFullResponse: true,
 				ignoreHttpStatusErrors: true,
-				headers: { 'User-Agent': 'n8n-nodes-invoapi/0.1.0' },
+				headers: { 'User-Agent': 'n8n-nodes-invoapi/0.2.0' },
 			})) as { statusCode: number; headers: IDataObject; body: IDataObject };
 			if (response.statusCode >= 400) {
 				// The API writes its messages for the person reading them; pass them on unchanged.
 				const error = ((response.body ?? {}) as IDataObject).error as IDataObject | undefined;
-				const message = String(error?.message ?? `invoapi antwortete mit HTTP ${response.statusCode}.`);
+				const message = String(error?.message ?? `invoapi answered with HTTP ${response.statusCode}.`);
 				const retryAfter = response.headers?.['retry-after'];
 				throw new NodeOperationError(this.getNode(), message, {
 					itemIndex,
 					description: [
 						error?.code ? `Code: ${error.code}` : '',
-						retryAfter ? `Erneut versuchen in ${retryAfter} Sekunden.` : '',
+						retryAfter ? `Try again in ${retryAfter} seconds.` : '',
 						error?.request_id ? `Request-ID: ${error.request_id}` : '',
 					].filter(Boolean).join(' · '),
 				});
@@ -241,7 +271,7 @@ export class Invoapi implements INodeType {
 				try {
 					return JSON.parse(raw) as IDataObject;
 				} catch {
-					throw new NodeOperationError(this.getNode(), 'Die Rechnungsdaten sind kein gültiges JSON.', { itemIndex });
+					throw new NodeOperationError(this.getNode(), 'The invoice data is not valid JSON. Check the Invoice (JSON) field.', { itemIndex });
 				}
 			}
 			return raw as IDataObject;
@@ -260,11 +290,12 @@ export class Invoapi implements INodeType {
 				? Buffer.from(String(document.content_base64), 'base64')
 				: Buffer.from(String(document.content ?? ''), 'utf8');
 			const property = this.getNodeParameter('outputBinaryProperty', itemIndex) as string;
-			const { document: _omit, ...rest } = response;
+			const rest: IDataObject = { ...response };
+			delete rest.document;
 			return {
 				json: { ...rest, filename: document.filename, mime_type: document.mime_type },
 				binary: {
-					[property]: await this.helpers.prepareBinaryData(bytes, String(document.filename ?? 'rechnung'), String(document.mime_type ?? 'application/octet-stream')),
+					[property]: await this.helpers.prepareBinaryData(bytes, String(document.filename ?? 'invoice'), String(document.mime_type ?? 'application/octet-stream')),
 				},
 				pairedItem: { item: itemIndex },
 			};
@@ -288,7 +319,7 @@ export class Invoapi implements INodeType {
 					if (format === 'zugferd') body.profile = this.getNodeParameter('profile', i) as string;
 					const response = await call(i, 'POST', '/api/v1/generate', body);
 					if (this.getNodeParameter('failOnInvalid', i) && response.valid === false) {
-						throw new NodeOperationError(this.getNode(), 'Die erzeugte Rechnung ist laut Validator nicht gültig.', {
+						throw new NodeOperationError(this.getNode(), 'The generated invoice does not pass the official validation. See the rules listed below.', {
 							itemIndex: i,
 							description: summarize(response.validation as IDataObject | undefined),
 						});
@@ -312,7 +343,7 @@ export class Invoapi implements INodeType {
 						request_id: response.request_id,
 					};
 					if (this.getNodeParameter('failOnInvalid', i) && response.valid !== true) {
-						throw new NodeOperationError(this.getNode(), `Die E-Rechnung ${fileName ?? ''} ist nicht gültig.`, {
+						throw new NodeOperationError(this.getNode(), `The e-invoice ${fileName ?? ''} does not pass the official validation.`, {
 							itemIndex: i,
 							description: summarize(result),
 						});
@@ -344,14 +375,15 @@ export class Invoapi implements INodeType {
 					results.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
 					continue;
 				}
-				throw error;
+				// An existing NodeOperationError is returned unchanged by its constructor.
+				throw new NodeOperationError(this.getNode(), error as Error, { itemIndex: i });
 			}
 		}
 		return [results];
 	}
 }
 
-/** "BR-DE-15: Leitweg-ID fehlt · …" — the first findings, for an error message. */
+/** "BR-DE-15: … · …" — the first findings, for a message. */
 function summarize(result: IDataObject | undefined): string {
 	const issues = ((result?.issues ?? []) as IDataObject[]).filter((issue) => issue.severity === 'error');
 	return issues

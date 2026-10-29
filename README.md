@@ -1,48 +1,48 @@
 # n8n-nodes-invoapi
 
-n8n-Node für [invoapi.de](https://invoapi.de): E-Rechnungen im Workflow **erzeugen, prüfen, auslesen und umwandeln**. XRechnung, ZUGFeRD / Factur-X, EN 16931, UBL, CII und Peppol, geprüft mit den offiziellen Regelwerken (KoSIT).
+n8n community node for [invoapi.de](https://invoapi.de), a REST API for European e-invoices. It **generates, validates, parses and converts** XRechnung, ZUGFeRD / Factur-X, EN 16931, UBL, CII and Peppol BIS documents. Validation runs the official rule sets (KoSIT validator, EN 16931 schematron), and every finding carries its rule ID and a plain-language explanation.
 
 ## Installation
 
-**In n8n (selbst betrieben):** *Settings → Community Nodes → Install* und als Paketnamen `n8n-nodes-invoapi` eintragen.
+**In n8n:** *Settings → Community Nodes → Install*, then enter `n8n-nodes-invoapi`.
 
-Oder im Terminal:
+Or manually, in `~/.n8n/nodes`:
 
 ```bash
 npm install n8n-nodes-invoapi
 ```
 
-(im Ordner `~/.n8n/nodes`, danach n8n neu starten)
+Restart n8n afterwards. See the [n8n community nodes guide](https://docs.n8n.io/integrations/community-nodes/installation/) for details.
 
-Danach unter **Credentials → Neu → invoapi API** den API-Schlüssel aus dem [invoapi-Dashboard](https://invoapi.de/dashboard) eintragen. Den Schlüssel prüft n8n beim Speichern; das kostet kein Kontingent.
+## Credentials
 
-## Operationen
+Create an API key in the [invoapi dashboard](https://invoapi.de/dashboard) (the free plan includes 100 invoices). In n8n, add a new **Invoapi API** credential and paste the key. n8n tests the key when you save it; the test does not count against your quota.
 
-| Operation | Eingabe | Ausgabe |
-|---|---|---|
-| **Rechnung erzeugen** | Rechnungsdaten als JSON | XML oder ZUGFeRD-PDF als Datei, plus Prüfergebnis |
-| **E-Rechnung prüfen** | XML- oder PDF-Datei | gültig ja/nein, Fehler mit Regel und Erklärung |
-| **Auslesen** | XML- oder PDF-Datei | Rechnungsdaten als JSON (Verkäufer, Käufer, Positionen, Summen) |
-| **Format erkennen** | XML- oder PDF-Datei | Standard, Syntax, Version |
-| **Umwandeln** | XML- oder PDF-Datei | anderes Format (z. B. XRechnung UBL → CII oder → ZUGFeRD-PDF), HTML oder JSON |
-| **Summen berechnen** | Rechnungsdaten als JSON | Netto, USt, Brutto, kostenlos |
+## Operations
 
-Dateien kommen und gehen als normale n8n-Binärdaten, zum Beispiel direkt aus einem E-Mail-Anhang (IMAP, Gmail, Outlook) oder in Google Drive, Dropbox und Co.
+| Resource | Operation | Input | Output |
+|---|---|---|---|
+| Invoice | **Generate** | Invoice data as JSON | XML or ZUGFeRD PDF as a binary file, plus the validation result |
+| Invoice | **Calculate Totals** | Invoice data as JSON | Net, VAT and gross totals (free, no quota used) |
+| Document | **Validate** | XML or PDF file | `valid` true/false, errors and warnings with rule and explanation |
+| Document | **Parse** | XML or PDF file | Invoice data as JSON (seller, buyer, lines, totals) |
+| Document | **Detect Format** | XML or PDF file | Standard, syntax and version |
+| Document | **Convert** | XML or PDF file | Another format (e.g. XRechnung UBL → CII, or → ZUGFeRD PDF), HTML or JSON |
 
-## Beispiel-Workflows
+Files go in and out as regular n8n binary data, for example straight from an email attachment (IMAP, Gmail, Outlook) or to Google Drive and Dropbox.
 
-**Eingangsrechnungen automatisch prüfen**
-E-Mail-Trigger (Anhang) → **invoapi: E-Rechnung prüfen** → IF `valid` → gültig: in den Buchhaltungsordner ablegen; ungültig: Rückfrage an den Absender mit den Fehlern aus `errors`.
+## Example workflows
 
-**Rechnungen aus Shop oder CRM als XRechnung**
-Webhook / Shop-Trigger → Set (Felder auf invoapi-Format bringen) → **invoapi: Rechnung erzeugen** → E-Mail mit Anhang an den Kunden.
+Import these from [`examples/`](examples/):
 
-**Ausgelesene Rechnungen in eine Tabelle**
-Ordner-Trigger → **invoapi: Auslesen** → Google Sheets / Airtable: Rechnungsnummer, Datum, Lieferant, Brutto.
+- **Validate incoming e-invoices:** Email trigger (attachment) → **Validate** → IF `valid` → file valid invoices, ask the sender about invalid ones using `errors`.
+- **Generate and validate an XRechnung:** Manual trigger → sample invoice data → **Generate** → **Validate**.
 
-## Rechnungsdaten
+Other common setups: a shop or CRM webhook → Set (map fields) → **Generate** → email the invoice to the customer; or a folder trigger → **Parse** → Google Sheets / Airtable.
 
-Die Operationen *Rechnung erzeugen* und *Summen berechnen* nehmen die Rechnung entweder aus dem JSON des eingehenden Elements oder aus einem JSON-Feld. Das Format ist das der invoapi-API:
+## Invoice data
+
+**Generate** and **Calculate Totals** read the invoice either from the incoming item's JSON or from a JSON field. The format is the invoapi API format:
 
 ```json
 {
@@ -51,32 +51,25 @@ Die Operationen *Rechnung erzeugen* und *Summen berechnen* nehmen die Rechnung e
   "due_date": "2026-11-27",
   "currency": "EUR",
   "buyer_reference": "04011000-12345-34",
-  "seller": { "name": "Muster GmbH", "street": "Musterstraße 1", "postal_code": "10115", "city": "Berlin",
-              "country_code": "DE", "vat_id": "DE123456789", "email": "rechnung@muster.de", "phone": "+49 30 1234567" },
-  "buyer":  { "name": "Beispiel GmbH", "street": "Teststraße 10", "postal_code": "20095", "city": "Hamburg",
-              "country_code": "DE", "email": "kreditoren@beispiel.de" },
-  "items":  [ { "name": "Beratung", "quantity": 8, "unit": "HUR", "unit_price": 145, "vat_rate": 19 } ],
+  "seller": { "name": "Muster GmbH", "street": "Musterstrasse 1", "postal_code": "10115", "city": "Berlin",
+              "country_code": "DE", "vat_id": "DE123456789", "email": "invoice@muster.de", "phone": "+49 30 1234567" },
+  "buyer":  { "name": "Beispiel GmbH", "street": "Teststrasse 10", "postal_code": "20095", "city": "Hamburg",
+              "country_code": "DE", "email": "payables@beispiel.de" },
+  "items":  [ { "name": "Consulting", "quantity": 8, "unit": "HUR", "unit_price": 145, "vat_rate": 19 } ],
   "payment": { "means_code": "58", "iban": "DE02120300000000202051" }
 }
 ```
 
-Alle Felder: [invoapi.de/docs](https://invoapi.de/docs).
+All fields are documented at [invoapi.de/docs](https://invoapi.de/docs).
 
-## Fehler
+## Errors
 
-Die Meldungen der API werden unverändert angezeigt, zum Beispiel „Der API-Schlüssel ist ungültig.“ oder „Ihr kostenloses Kontingent ist aufgebraucht …“. Mit **Bei ungültiger Rechnung abbrechen** stoppt der Workflow, wenn eine Rechnung die Prüfung nicht besteht; sonst läuft er weiter und Sie entscheiden per IF-Node anhand von `valid`.
+API errors (for example an invalid API key or an exhausted quota) are shown as the node's error message. With **Stop on Invalid Invoice** enabled, the workflow stops when a document fails validation; otherwise it continues and you can branch on `valid` with an IF node.
 
-## Lizenz
+## Compatibility
 
-MIT
+Tested with the current n8n release (self-hosted, October 2026).
 
-## English
+## License
 
-n8n community node for [invoapi.de](https://invoapi.de), a REST API for European e-invoices. It **generates, validates, parses and converts** XRechnung, ZUGFeRD / Factur-X, EN 16931, UBL, CII and Peppol BIS documents. Validation runs the official rule sets (KoSIT validator, EN 16931 schematron), and every finding carries its rule ID and a plain-language explanation.
-
-- **Install:** *Settings → Community Nodes → Install* → `n8n-nodes-invoapi`
-- **Credentials:** an API key from the [invoapi dashboard](https://invoapi.de/dashboard); the free plan includes 100 invoices.
-- **Operations:** generate an invoice (XML or ZUGFeRD PDF), validate a document, parse it to JSON, convert between formats.
-- **Examples:** ready-made workflows in [`examples/`](examples/).
-
-License: MIT
+[MIT](LICENSE)

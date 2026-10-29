@@ -2,13 +2,16 @@ import type {
 	IAuthenticateGeneric,
 	ICredentialTestRequest,
 	ICredentialType,
+	Icon,
 	INodeProperties,
 } from 'n8n-workflow';
 
 export class InvoapiApi implements ICredentialType {
 	name = 'invoapiApi';
 
-	displayName = 'invoapi API';
+	displayName = 'Invoapi API';
+
+	icon: Icon = { light: 'file:../icons/invoapi.svg', dark: 'file:../icons/invoapi.dark.svg' };
 
 	documentationUrl = 'https://invoapi.de/docs';
 
@@ -20,14 +23,14 @@ export class InvoapiApi implements ICredentialType {
 			typeOptions: { password: true },
 			default: '',
 			required: true,
-			description: 'Im invoapi-Dashboard unter API-Schlüssel',
+			description: 'Create one in the invoapi dashboard under API keys: https://invoapi.de/dashboard/api-keys',
 		},
 		{
 			displayName: 'Base URL',
 			name: 'baseUrl',
 			type: 'string',
 			default: 'https://api.invoapi.de',
-			description: 'Nur ändern, wenn Sie eine eigene invoapi-Instanz betreiben',
+			description: 'Change only if you run your own invoapi instance'
 		},
 	];
 
